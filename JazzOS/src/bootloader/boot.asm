@@ -11,7 +11,7 @@ bdb_reserved_sectors: DW 1
 bdb_fat_count: DB 2
 bdb_dir_entries_count: DW 0E0h
 bdb_total_sectors: DW 2880
-bdb_media-_descriptor_type: DB 0F0h
+bdb_media_descriptor_type: DB 0F0h
 bdb_sectors_per_fat: DW 9
 bdb_sectors_per_track: DW 18
 bdb_heads: DW 2
