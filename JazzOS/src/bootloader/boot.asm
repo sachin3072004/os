@@ -29,14 +29,84 @@ main:
     MOV ds,ax
     MOV es,ax
     MOV ss,ax
-   	MOV sp,0x7C00
-    	MOV si, os_boot_msg 
-    	CALL print
+    MOV sp,0x7C00
+	
+    MOV [ebr_drive_number], dl 
+    MOV ax,1
+    MOV cl,1
+    MOV bx, 0x7E00
+    call disk_read
+    MOV ah, 02h
+    
+    MOV di,3
+    
+
+    MOV si, os_boot_msg 
+    CALL print
     HLT
+
+retry:
+	STC
+	INT 13h
+	jnc doneRead
+	call diskReset
+	DEC di
+	TEST di,di
+	JNZ retry
+
+failDiskRead:
+	MOV si, read_failure
+	CALL print
+	HLT
+	JMP halt
+
+diskReset:
+	pusha
+	MOV ah,0
+	STC
+	INT 13h
+	JC failDiskRead
+	POPA
+	RET	
+doneRead:
+	pop di
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
 
 halt:
     JMP halt
 
+
+lba_to_chs:
+	PUSH ax
+	PUSH dx
+	XOR dx,dx
+	DIV word [bdb_sectors_per_track]
+	INC DX
+	MOV CX,DX
+	XOR DX,dx
+	
+	DIV word [bdb_heads]
+	MOV dh,dl
+	MOV ch,al
+	SHL ah,6
+	OR CL,AH
+	POP ax
+	MOV dl,al
+	pop ax
+	
+	RET	
+
+disk_read:
+	push ax
+	push bx
+	push cx
+	push dx
+	push di
+	call lba_to_chs 
 print:
     ;PUSH si
     ;PUSH ax
@@ -58,6 +128,6 @@ done_print:
     RET
 
 os_boot_msg: DB 'Our OS has booted!',0,0
-
+read_failure: DB 'Failed to read disk!',0x0D, 0x0A, 0
 TIMES 510-($-$$) DB 0
 DW 0AA55h
